@@ -7,8 +7,7 @@ import random as rdom
 
 @dataclass
 class Initialiser:
-    esm_select: int               # electronic support measure option
-    ea_select: int                # electronic attack option
+    eattack_select: int          # electronic attack option
     fc: float                     # the centre frequency of the transmitted waveform
     bwidth: float = 3e3           # the bandwidth of the radar
     fs: float = 48e3              # the sampling frequency of the sound card
@@ -144,7 +143,6 @@ class TXSignal(Initialiser):
             plt.plot(t, f_x)
             plt.xlabel("time (s)")
             plt.ylabel('Magnitude')
-            plt.title('LFM time-domain Signal', loc='left')
             plt.grid(True)
         elif plot_sel == 2:     # plots the input function in the time domain as a function of sample
             plt.subplot(111)
@@ -157,7 +155,6 @@ class TXSignal(Initialiser):
             plt.plot(freq / 1000, np.abs(F_X))
             plt.xlabel("Samples (kHz)")
             plt.ylabel('Magnitude')
-            plt.title("(a)", loc='left')
             plt.grid(True)
         else:
             _, ax = plt.subplots(1, 2)
