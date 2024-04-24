@@ -79,6 +79,7 @@ class TXSignal(Initialiser):
 
         return templates
     
+    # adjust the code to mimic the capturing of the AGC
     def generate_rgpo_sig(self, delay_factor=4):
         '''generate a signal that gradually pulls from the range and then stops'''
         init_delay = self.pw_samples + int(self.pw_samples / delay_factor)
@@ -127,6 +128,52 @@ class TXSignal(Initialiser):
         rgpo_sig = np.array(rgpo_sig).astype(np.float32)
 
         return rgpo_sig
+
+    def coverPulse(self, cover_fc):
+        '''generates a cover pulse signal to prevent operation of the sonar'''
+        min_distance = self.R_min + 0.2
+        cover_sig = []
+
+        # shorten the delay and listening times to cater for a longer cover pulse
+        adj_pulse_width = (2 * min_distance) / self.sound_speed
+        adj_samples = ceil(adj_pulse_width / ( 1 / self.fs)) - self.pw_samples
+        adj_samples = int(adj_samples / 2)
+        adj_delay_samples = self.delay_samples[:len(self.delay_samples) - adj_samples]
+        adj_lstn_samples = self.lstn_zeros[:self.lstn_samples - (2 * adj_samples)]
+        adj_pw_samples = self.pw_samples + (2 * adj_samples)
+
+        print(f"The cover pulse signal has {adj_pw_samples} pulse width samples and {len(adj_lstn_samples)} dead time samples." )       
+
+        # generate an LFM pulse with these parameters
+        adj_pulse = chirp(
+            np.linspace(0, adj_pulse_width, adj_pw_samples), 
+            f0=self.fc,
+            f1=cover_fc+self.bwidth, 
+            t1=adj_pulse_width, 
+            method='linear'
+        ).astype(np.float32)
+
+        # generate the cover signal
+        cover_sig = np.append(cover_sig, adj_delay_samples)
+
+        # delay generation of cover pulses to mimic DRFM reception, storage, and retransmission
+        delay_pulses = rdom.randint(3, 6)
+        print(f'The cover pulse to be generated after the {delay_pulses}th LFM pulse')
+        for i in range(delay_pulses):
+            cover_sig = np.append(cover_sig, self.pri_zeros)
+
+        # generate cover pulse signals for the remaining pulses
+        for i in range(self.num_pulses - delay_pulses):
+            cover_sig = np.append(cover_sig, adj_pulse)
+            cover_sig = np.append(cover_sig, adj_lstn_samples)
+
+        cover_sig = np.append(cover_sig, adj_delay_samples)
+        cover_sig = np.append(cover_sig, np.zeros(2 * adj_samples))
+        print(len(adj_delay_samples))
+        print(len(self.delay_samples))
+        cover_sig = np.array(cover_sig).astype(np.float32)
+
+        return cover_sig
 
     def plotter(self, f_x, plot_sel=2):
         '''Plots the time series and frequency spectrums of the given signal'''

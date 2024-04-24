@@ -143,7 +143,10 @@ class ELB780_2:
         elif self.eattack_select == 2:       # velocity gate pull-off
             pass
         elif self.eattack_select == 3:       # cover pulse
-            pass
+            eattack_sig = self.tx_signal.coverPulse(20e3)
+            plt.plot(smps, eattack_sig)
+            output_bytes = np.column_stack((esupport_sig, eattack_sig))
+            self.output_bytes = (self.tx_signal.volume * output_bytes).tobytes()
         elif self.eattack_select == 4:       # multiple false targets
             pass
         else:
@@ -160,7 +163,7 @@ class ELB780_2:
         self.plotter(signal1, 2)
 
 def main():
-    eattack_select = 1
+    eattack_select = 3
     fc = 9e3
     operation = 0
 
@@ -168,7 +171,7 @@ def main():
     obj.signal_construction()
     
     # defines the threads for playing and recording
-    ithread = Thread(target=obj.listener)
+    '''ithread = Thread(target=obj.listener)
     othread = Thread(target=obj.emitter)
     # starts the playing and recording threads
     ithread.start()
@@ -181,7 +184,7 @@ def main():
 
     obj.terminate_pa()
     obj.pulse_compression()
-    obj.data_matrix()
+    obj.data_matrix()'''
 
 if __name__ == '__main__':
     main()
